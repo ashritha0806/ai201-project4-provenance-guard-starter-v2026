@@ -39,7 +39,33 @@
 <!-- The path a submission takes, from arriving to the label a reader sees.
      Six or seven steps — this is the trace you wrote in Milestone 1. -->
 
+1. app.py submit() parses the JSON and checks that text and creator_id are present and usable.
+2. detector.py model signal returns the model score.
+3. stylometry.py style signal returns the style score.
+4. scoring.py combine signals merges the two scores into one confidence value.
+5. scoring.py score_to_label maps the confidence to ai, human, or unsure.
+6. audit.py log decision records the result under a new content_id.
+7. The response returns to the caller, who shows the label to the reader. A disputed label can be appealed through POST /appeal.
 
+### False positive trace
+
+A writer submits an essay that they wrote themselves, in plain even sentences. Signal one reads the plain vocabulary as predictable, so it leans AI. Signal two reads the even sentence length as machine like, so it leans AI too. The combined confidence lands in the AI range, so the response label says the work is likely AI generated. The writer sees only the label and has no access to the underlying scores. Their only option is POST /appeal with their content_id and reasoning. That moves the item to under_review.
+
+### Endpoint contract
+
+POST /submit
+
+- Request: {"text": string, "creator_id": string}
+- Response: {"content_id": string, "guess": "ai" | "human" | "unsure", "confidence": number between 0 and 1, "label": string, "model_score": number between 0 and 1, "style_score": number between 0 and 1}
+- Error (missing, empty, non-ascii characters or oversized text): {"error": "invalid_text", "message": string} with HTTP 400
+- Error (missing, empty, non-ascii characters or oversized creator_id): {"error": "invalid_creator_id", "message": string} with HTTP 400
+
+POST /appeal
+
+- Request: {"content_id": string, "reasoning": string}
+- Response: {"content_id": string, "status": "under_review", "message": string}
+- Error (unknown content_id): {"error": "content_id_not_found", "message": string} with HTTP 404
+- Error (missing, empty reasoning): {"error": "reasoning_not_found", "message": string} with HTTP 404
 
 ---
 
@@ -54,18 +80,25 @@
 ### Signal one — the model signal
 
 **What it measures:**
+How predictable the text is to a local language model, measured as perplexity. Low perplexity means the model could easily guess the next words. detector.py model_signal turns perplexity into a 0–1 score, where higher means more likely AI.
 
 **Why that might differ between human and AI writing:**
+Language models produce text by choosing likely next words, so their output tends to be predictable. Human writing is more irregular, with unusual word choices and hard to guess the writing pattern.
 
 **What it can't see:**
+
+It rewards common words, ordinary sentences, so plain human writing can score as AI written. It can also miss AI text that uses rare or unusual vocabulary, because that text is harder for the model to predict.
 
 ### Signal two — the style signal
 
 **What it measures:**
+The shape of the text, without reading its meaning. The planned measures are sentence length spread, type-token ratio (unique words divided by total words), and punctuation density. stylometry.py style signal will combine them into a 0–1 score, where higher means more likely AI.
 
 **Why that might differ between human and AI writing:**
+Generated text tends to sound uniform. Most sentences are similar length, so pattern feels same. Human writing tends to vary more in rhythm and punctuation.
 
 **What it can't see:**
+Split sentences, quotation, meaning can change its score without changing the substance. Even sometimes plain human writing can look AI written.
 
 ### The combining rule
 
@@ -83,8 +116,6 @@
 
 **A case where my two signals split, and what my rule does with it:**
 
-
-
 ---
 
 ## Label Variants
@@ -94,18 +125,17 @@
 
      Write them for someone who has never heard the word "threshold". -->
 
-| Label | Score range | The exact text a reader sees |
-|---|---|---|
-| high-confidence human |  |  |
-| unsure |  |  |
-| high-confidence AI |  |  |
+| Label                 | Score range | The exact text a reader sees |
+| --------------------- | ----------- | ---------------------------- |
+| high-confidence human |             |                              |
+| unsure                |             |                              |
+| high-confidence AI    |             |                              |
 
 **Why I worded the "unsure" one this way:**
+
 <!-- It's the hardest of the three. It has to admit uncertainty without
      sounding like an accusation, because the person reading it may well have
      written every word themselves. -->
-
-
 
 ---
 
@@ -159,15 +189,15 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 
 **Moment 1**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- _What I asked for:_
+- _What came back:_
+- _What I changed:_
 
 **Moment 2**
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+- _What I asked for:_
+- _What came back:_
+- _What I changed:_
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
@@ -175,9 +205,10 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 
 ## Rate Limiting
 
-**My limits:** ___ per minute, ___ per day
+**My limits:** **_ per minute, _** per day
 
 **Why those numbers and not others:**
+
 <!-- Think about two people: a real writer submitting their own work a few
      times an hour, and a script sending a thousand variations to map your
      thresholds. Your numbers have to be liveable for the first and hostile to
@@ -202,8 +233,6 @@ can look like one. -->
 <!-- Every attack with its outcome and a held-or-broke mark.
      `run_attacks.py --label before` produces the table. -->
 
-
-
 **Ten audit log entries from the run**
 
 <!-- Choose entries that show the interesting failures, not the ten easiest. -->
@@ -215,8 +244,6 @@ can look like one. -->
 **The single worst outcome** — the one I'd least want to explain to a writer
 whose work got caught by it:
 
-
-
 ---
 
 ## Run Log and Verdicts
@@ -224,12 +251,12 @@ whose work got caught by it:
 <!-- Your five criteria across three trials. `run_eval.py --label before`. -->
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
-|---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| --------- | ------ | ----- | ----- | ----- | ------- |
+| 1.        |        |       |       |       |         |
+| 2.        |        |       |       |       |         |
+| 3.        |        |       |       |       |         |
+| 4.        |        |       |       |       |         |
+| 5.        |        |       |       |       |         |
 
 **Real output from one trial**, pasted as text, naming the file and function
 that produced it:
@@ -254,8 +281,6 @@ that produced it:
 
      Look for a pattern. Five failures on one signal is one problem, not five. -->
 
-
-
 ---
 
 ## The Improvement
@@ -268,14 +293,10 @@ that produced it:
 
 <!-- Same format. `run_attacks.py --label after` -->
 
-
-
 **Did it help, and how do I know:**
 
 <!-- Widening the unsure band usually fixes one problem and creates another.
      Reporting that trade honestly is worth full credit. -->
-
-
 
 ---
 
@@ -284,14 +305,10 @@ that produced it:
 <!-- For each attack still getting through and each criterion still missed:
      what you'd do, and why you stopped. -->
 
-
-
 **The trade I'd make if this ran for real:**
 
 <!-- Two sentences. Fewer wrong accusations means more AI text getting through.
      Say which way you'd go and WHO PAYS FOR IT. -->
-
-
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
