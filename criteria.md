@@ -5,14 +5,14 @@ Five criteria that say what "working" means for this service, written in unit 7
 
 **All five are yours.** None are given.
 
-An acceptance criterion names a number or something plainly observable. *"The
-detector is accurate"* is an opinion — and perfect AI detection isn't possible
-anyway, so it's an opinion about something nobody can deliver. *"Of 10 pieces I
-wrote myself, at most 1 is labelled high-confidence AI"* is a criterion.
+An acceptance criterion names a number or something plainly observable. _"The
+detector is accurate"_ is an opinion — and perfect AI detection isn't possible
+anyway, so it's an opinion about something nobody can deliver. _"Of 10 pieces I
+wrote myself, at most 1 is labelled high-confidence AI"_ is a criterion.
 
-Under each, write a sentence or two on **why that target**. *"I allow at most 1
+Under each, write a sentence or two on **why that target**. _"I allow at most 1
 false positive in 10 because on a writing site a wrong accusation costs more
-than a missed detection"* is a real answer.
+than a missed detection"_ is a real answer.
 
 > Missing your own targets next unit costs you nothing. Setting a target so
 > easy you can't miss it does.
@@ -23,13 +23,13 @@ than a missed detection"* is a real answer.
 
 **Cover at least three of these five areas.** They're prompts, not a form.
 
-| Area | A question it could answer |
-|---|---|
-| False positives | How often may a human's writing get called AI? |
-| Score spread | How far apart should clearly-AI and clearly-human text score? |
-| Label coverage | Is every one of your three labels actually reachable? |
-| The appeal path | Does an appeal always change status and always get recorded? |
-| Bad input | What happens when `text` is missing, empty, or enormous? |
+| Area            | A question it could answer                                    |
+| --------------- | ------------------------------------------------------------- |
+| False positives | How often may a human's writing get called AI?                |
+| Score spread    | How far apart should clearly-AI and clearly-human text score? |
+| Label coverage  | Is every one of your three labels actually reachable?         |
+| The appeal path | Does an appeal always change status and always get recorded?  |
+| Bad input       | What happens when `text` is missing, empty, or enormous?      |
 
 Two things worth knowing before you pick numbers:
 
@@ -42,63 +42,51 @@ Two things worth knowing before you pick numbers:
   a **miss**.
 
 ---
-## 1.
+
+## Criteria 1: False positive on human writing
+
+Out of 30 human-written texts at most 3 can be labeled as“High-confidence AI” in each of 3 trials.
 
 <!-- Your criterion. It must name a number. -->
 
-
-
 **Why this target:**
-
-
+In writing, a wrong accusation for writer costs more than a missed AI detection. So 10% of error is allowed because some human writing especially from second language writers can look machine like and 0 would be unrealistic.
 
 ---
 
-## 2.
+## Criteria 2: score spread
 
-<!-- Your criterion. -->
-
-
+On a 0 to 1 scale the median score of 30 AI texts is at least 0.4 higher than the median score of 30 human texts in each of 3 trials.
 
 **Why this target:**
-
-
+If the two groups (30 human texts and 30 AI texts) score close together, no threshold can separate them, and the labels would be guesses. A gap of 0.4 is wide enough to set useful cutoffs.
 
 ---
 
-## 3.
+## Criteria 3: Label coverage
 
-<!-- Your criterion. -->
-
-
+Each of the three labels is produced at least 3 times across the 30 text label set in each of 3 trials.
 
 **Why this target:**
-
-
+A label that never appears does nothing useful and does not give any useful information to readers, 3 appearances is minimum for a label to be meaningful.
 
 ---
 
-## 4.
+## Criteria 4: Appeal path
 
-<!-- Your criterion. -->
-
-
+In 10 test appeals, 10 of 10 create a log entry with a timestamp and a recorded decision in each of 3 trials and change status to 'under_review'
 
 **Why this target:**
-
-
+An appeal that is silently dropped or never logged gives the writer no information and appeal decision should not be automatic. So logging yes or no is must with no exceptions.
 
 ---
 
-## 5.
+## Criteria 5: Bad Input
 
-<!-- Your criterion. -->
-
-
+For texts under 20 words the system returns a “not enough text to score” message with no score and no crash in 3 of 3 cases, in each of 3 trials.
 
 **Why this target:**
-
-
+A short input gives the model almost nothing to judge, so the score it produced would be noise. A text which has words fewer than 20 rarely contains enough information to decide.
 
 ---
 
