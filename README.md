@@ -154,10 +154,18 @@ Split sentences, quotation, meaning can change its score without changing the su
 ```bash
 $ curl -X POST http://127.0.0.1:5000/submit \
   -H "Content-Type: application/json" \
-  -d '{"text": "...", "creator_id": "..."}'
+  -d '{"text": "The implementation of the proposed framework requires careful consideration of several key factors.", "creator_id": "student_1"}'
 ```
 
 ```json
+{
+  "confidence": 0.5563,
+  "content_id": "sub_f257ae1c",
+  "guess": "ai",
+  "label": "unsure",
+  "model_score": 0.5563,
+  "style_score": 0.0
+}
 
 ```
 
@@ -180,7 +188,33 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 ```
 
 ```json
-
+{
+  "count": 2,
+  "entries": [
+    {
+      "combined_score": 0.5563,
+      "content_id": "sub_e25f5d26",
+      "creator_id": "student_1",
+      "guess": "ai",
+      "label": "unsure",
+      "model_score": 0.5563,
+      "status": "decided",
+      "style_score": 0.0,
+      "timestamp": "2026-11-06T03:16:55+00:00"
+    },
+    {
+      "combined_score": 0.5563,
+      "content_id": "sub_f257ae1c",
+      "creator_id": "student_1",
+      "guess": "ai",
+      "label": "unsure",
+      "model_score": 0.5563,
+      "status": "decided",
+      "style_score": 0.0,
+      "timestamp": "2026-11-06T18:27:26+00:00"
+    }
+  ]
+}
 ```
 
 ---

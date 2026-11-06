@@ -30,6 +30,7 @@ from flask import Flask, jsonify, request
 
 import audit
 import config
+import detector
 
 app = Flask(__name__)
 
@@ -153,6 +154,46 @@ def health():
 @app.post("/submit")
 # @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
 def submit():
+    payload = request.get_json(silent=True) or {}
+    text = payload.get("text")
+    creator_id = payload.get("creator_id")
+
+    if not text or not isinstance(text, str) or not text.strip():
+        return jsonify({"error": "invalid_text", "message": "Text is required and cannot be empty."}), 400
+    if not creator_id or not isinstance(creator_id, str) or not creator_id.strip():
+        return jsonify({"error": "invalid_creator_id", "message": "creator_id is required and cannot be empty."}), 400
+    # 1. Unique content_id for tracking and appeals
+    content_id = f"sub_{uuid.uuid4().hex[:8]}"
+    # 2. Run signal one (model signal)
+    try:
+        model_score = detector.model_signal(text)
+    except ValueError as e:
+        return jsonify({"error": "invalid_text", "message": str(e)}), 400
+    # 3. Placeholder values for Milestone 3 (signal 2 & scoring come in Milestones 4 & 5)
+    style_score = 0.0
+    confidence = model_score
+    guess = "ai" if model_score >= 0.5 else "human"
+    label = "unsure"
+    # 4. Log the decision through audit.py
+    audit.log_decision(
+        content_id=content_id,
+        creator_id=creator_id,
+        guess=guess,
+        model_score=model_score,
+        style_score=style_score,
+        combined_score=confidence,
+        label=label,
+        status="decided",
+    )
+
+    return jsonify({
+        "content_id": content_id,
+        "guess": guess,
+        "confidence": confidence,
+        "label": label,
+        "model_score": model_score,
+        "style_score": style_score,
+    }), 200
     """
     Take a piece of text, decide about it, log the decision, answer.
     ← TODO — Milestones 3, 4 and 5
@@ -201,15 +242,6 @@ def submit():
     """
     payload = request.get_json(silent=True) or {}
 
-    # TODO: delete this and build the route.
-    return jsonify({
-        "error": "not_implemented",
-        "message": "POST /submit isn't built yet — see the TODO in app.py.",
-        "you_sent": {
-            "text_length": len(payload.get("text", "")),
-            "creator_id": payload.get("creator_id"),
-        },
-    }), 501
 
 
 @app.post("/appeal")
