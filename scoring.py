@@ -18,8 +18,16 @@ you claim, so that line should read `scoring.py::combine_signals`.
 
 import config
 
+WEIGHT_MODEL_SIGNAL = 0.6
+WEIGHT_STYLE_SIGNAL = 0.4
+
 
 def combine_signals(model_score: float, style_score: float) -> float:
+    combined = (
+        config.WEIGHT_MODEL_SIGNAL * model_score
+        + config.WEIGHT_STYLE_SIGNAL * style_score
+    )
+    return round(min(max(combined, 0.0), 1.0), 4)
     """
     Combine two 0–1 signals into one 0–1 score. ← TODO (Milestone 4)
 
@@ -52,11 +60,6 @@ def combine_signals(model_score: float, style_score: float) -> float:
     The weights in config.py are placeholders. Change them, or ignore them and
     write a different rule.
     """
-    # TODO: replace this
-    return (
-        config.WEIGHT_MODEL_SIGNAL * model_score
-        + config.WEIGHT_STYLE_SIGNAL * style_score
-    )
 
 
 def score_to_label(score: float) -> tuple[str, str]:

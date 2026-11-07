@@ -106,8 +106,12 @@ Split sentences, quotation, meaning can change its score without changing the su
      signals disagree? -->
 
 **The rule:**
+When the two signals disagree that is one leans human and the other leans AI, their disagreement reach the combined score toward the middle around 0.45 - 0.55, resulting in the "unsure" label. This prevents a single signal from producing a false accusation when the signals are in conflict.
 
 **The numbers:**
+WEIGHT_MODEL_SIGNAL = 0.6 (60%)
+WEIGHT_STYLE_SIGNAL = 0.4 (40%)
+In stylometry: 60% sentence length spread, 20% type-token ratio, 20% punctuation density.
 
 **Where it lives:** `scoring.py::combine_signals`
 
@@ -115,6 +119,14 @@ Split sentences, quotation, meaning can change its score without changing the su
      somewhere else, say where. -->
 
 **A case where my two signals split, and what my rule does with it:**
+
+Text: The meeting was adjourned. Although several committee members expressed strong reservations about the newly proposed timeline and budget allocation, the chairperson decided to proceed anyway.
+
+Signal one(detector.model_signal): 0.56(vocabulary leans AI)
+Signal two(stylometry.style_signal): 0.3351 (sentence length variation leans Human)
+Combined score (scoring.combine_signals): 0.4712
+
+What my rule does with it: The two signals disagree (model_score at 0.562 vs style_score at 0.3351). The combining rule averages them into a combined score of 0.4712, pulling it towards "unsure". This protects the writer from a false accusation based solely on vocabulary predictability by letting the sentence length variation temper the score.
 
 ---
 

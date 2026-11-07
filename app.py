@@ -31,6 +31,8 @@ from flask import Flask, jsonify, request
 import audit
 import config
 import detector
+import scoring
+import stylometry
 
 app = Flask(__name__)
 
@@ -170,9 +172,9 @@ def submit():
     except ValueError as e:
         return jsonify({"error": "invalid_text", "message": str(e)}), 400
     # 3. Placeholder values for Milestone 3 (signal 2 & scoring come in Milestones 4 & 5)
-    style_score = 0.0
-    confidence = model_score
-    guess = "ai" if model_score >= 0.5 else "human"
+    style_score = stylometry.style_signal(text)
+    confidence = scoring.combine_signals(model_score, style_score)
+    guess = "ai" if confidence >= 0.5 else "human"
     label = "unsure"
     # 4. Log the decision through audit.py
     audit.log_decision(

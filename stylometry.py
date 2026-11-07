@@ -48,6 +48,11 @@ def words(text: str) -> list[str]:
 # ── The three measures — YOU BUILD THESE ─────────────────────────────────────
 
 def sentence_length_spread(text: str) -> float:
+    sents = sentences(text)
+    if len(sents) < 2:
+        return 0.0
+    lengths = [len(words(s)) for s in sents]
+    return statistics.stdev(lengths)
     """
     How much sentence length varies. ← TODO
 
@@ -64,11 +69,13 @@ def sentence_length_spread(text: str) -> float:
     `stdev` raises on fewer than two values. Decide what that should return
     before the attack set decides for you.
     """
-    # TODO: replace this
-    return 0.0
 
 
 def type_token_ratio(text: str) -> float:
+    w = words(text)
+    if not w:
+        return 0.0
+    return len(set(w)) / len(w)
     """
     Unique words over total words. ← TODO
 
@@ -80,11 +87,13 @@ def type_token_ratio(text: str) -> float:
     directly comparable on it, and if your test inputs vary a lot in length,
     that alone can look like a signal.
     """
-    # TODO: replace this
-    return 0.0
-
 
 def punctuation_density(text: str) -> float:
+    w = words(text)
+    if not w:
+        return 0.0
+    punct_count = len(re.findall(r"[,;:\-\—\(\)]", text))
+    return punct_count / len(w)
     """
     How much punctuation, relative to length. ← TODO
 
@@ -94,13 +103,23 @@ def punctuation_density(text: str) -> float:
         more interesting than full stops, because they vary more between
         writers.
     """
-    # TODO: replace this
-    return 0.0
+    
 
 
 # ── Combining them ───────────────────────────────────────────────────────────
 
 def style_signal(text: str) -> float:
+    spread = sentence_length_spread(text)
+    ttr = type_token_ratio(text)
+    punct = punctuation_density(text)
+    #Sentence length spread
+    spread_ai = 1.0 / (1.0 + spread / 5.0)
+    #Type-token ratio 
+    ttr_ai = 1.0 - ttr
+    #Punctuation density
+    punct_ai = 1.0 / (1.0 + punct * 10.0)
+    score = (0.60 * spread_ai) + (0.20 * ttr_ai) + (0.20 * punct_ai)
+    return round(min(max(score, 0.0), 1.0), 4)
     """
     The style signal as a 0–1 score. **Higher means more likely AI.** ← TODO
 
@@ -122,8 +141,6 @@ def style_signal(text: str) -> float:
     you trust it. Plain and ordinary, not formal: formal prose reads as *human*
     to signal one, and it is plain writing that gets accused.
     """
-    # TODO: replace this
-    return 0.5
 
 
 if __name__ == "__main__":

@@ -1,2 +1,5 @@
 {"timestamp": "2026-11-06T03:16:55+00:00", "content_id": "sub_e25f5d26", "creator_id": "student_1", "guess": "ai", "model_score": 0.5563, "style_score": 0.0, "combined_score": 0.5563, "label": "unsure", "status": "decided"}
 {"timestamp": "2026-11-06T18:27:26+00:00", "content_id": "sub_f257ae1c", "creator_id": "student_1", "guess": "ai", "model_score": 0.5563, "style_score": 0.0, "combined_score": 0.5563, "label": "unsure", "status": "decided"}
+{"timestamp": "2026-11-07T21:24:43+00:00", "content_id": "sub_43dc9c56", "creator_id": "student_1", "guess": "ai", "model_score": 0.562, "style_score": 0.3351, "combined_score": 0.4486, "label": "unsure", "status": "decided"}
+{"timestamp": "2026-11-07T21:31:02+00:00", "content_id": "sub_39908fa7", "creator_id": "student_1", "guess": "ai", "model_score": 0.562, "style_score": 0.3351, "combined_score": 0.4486, "label": "unsure", "status": "decided"}
+{"timestamp": "2026-11-07T21:31:29+00:00", "content_id": "sub_5fe9c812", "creator_id": "student_1", "guess": "human", "model_score": 0.562, "style_score": 0.3351, "combined_score": 0.4486, "label": "unsure", "status": "decided"}
