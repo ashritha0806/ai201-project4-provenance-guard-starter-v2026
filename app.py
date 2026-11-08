@@ -154,34 +154,45 @@ def health():
 # ── YOU BUILD THIS ────────────────────────────────────────────────────────────
 
 @app.post("/submit")
-# @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
+@limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute;{config.RATE_LIMIT_PER_DAY}/day")
 def submit():
     payload = request.get_json(silent=True) or {}
     text = payload.get("text")
     creator_id = payload.get("creator_id")
 
     if not text or not isinstance(text, str) or not text.strip():
+        audit.log_rejection(creator_id=creator_id or "unknown", reason="missing_text")
         return jsonify({"error": "invalid_text", "message": "Text is required and cannot be empty."}), 400
+
     if not creator_id or not isinstance(creator_id, str) or not creator_id.strip():
+        audit.log_rejection(creator_id="unknown", reason="missing_creator_id")
         return jsonify({"error": "invalid_creator_id", "message": "creator_id is required and cannot be empty."}), 400
+
     # criteria 1
     if not text.isascii():
+        audit.log_rejection(creator_id=creator_id, reason="non_ascii")
         return jsonify({"error": "invalid_text", "message": "Text must contain only ASCII characters."}), 400
+
     if len(text) > 10000:
+        audit.log_rejection(creator_id=creator_id, reason="oversized_text")
         return jsonify({"error": "invalid_text", "message": "Text exceeds maximum size."}), 400
+
     # Criterion 5 
     words = text.split()
     if len(words) < 20:
+        audit.log_rejection(creator_id=creator_id, reason="too_short")
         return jsonify({
             "error": "invalid_text",
             "message": "not enough text to score",
         }), 400
+
     # Unique content_id for tracking and appeals
     content_id = f"sub_{uuid.uuid4().hex[:8]}"
     # Run signal one (model signal)
     try:
         model_score = detector.model_signal(text)
     except ValueError as e:
+        audit.log_rejection(creator_id=creator_id, reason="detector_value_error")
         return jsonify({"error": "invalid_text", "message": str(e)}), 400
     # 3. Placeholder values for Milestone 3 (signal 2 & scoring come in Milestones 4 & 5)
     style_score = stylometry.style_signal(text)

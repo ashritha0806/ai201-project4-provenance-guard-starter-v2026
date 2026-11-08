@@ -49,7 +49,9 @@
 
 ### False positive trace
 
-A writer submits an essay that they wrote themselves, in plain even sentences. Signal one reads the plain vocabulary as predictable, so it leans AI. Signal two reads the even sentence length as machine like, so it leans AI too. The combined confidence lands in the AI range, so the response label says the work is likely AI generated. The writer sees only the label and has no access to the underlying scores. Their only option is POST /appeal with their content_id and reasoning. That moves the item to under_review.
+### False positive trace
+
+A writer submits an essay that they wrote themselves, in plain, even sentences. Signal one reads the predictable vocabulary as machine-like (`model_score = 0.72`). Signal two reads the uniform sentence length as repetitive (`style_score = 0.68`). The combined score lands at `0.704` (above the `0.65` AI threshold), returning the label: *"This text shows strong patterns characteristic of AI-generated writing."* The writer sees only this accusatory label with no access to the underlying scores. Their only recourse is to submit `POST /appeal` with their `content_id` and reasoning, which transitions the item's status in the audit log to `under_review` for human review.
 
 ### Endpoint contract
 
@@ -262,18 +264,17 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 
 ## Rate Limiting
 
-**My limits:** **_ per minute, _** per day
+**My limits:** **10 per minute, 200 per day**
 
 **Why those numbers and not others:**
-
+Ten submissions per minute gives a real human writer ample headroom to submit essays, revisions, and test paragraphs without ever hitting an obstacle. However, it is strictly hostile to automated scripts trying to reverse-engineer thresholds, flood server resources, or brute-force evasion attacks by running hundreds of automated variations.
 <!-- Think about two people: a real writer submitting their own work a few
      times an hour, and a script sending a thousand variations to map your
      thresholds. Your numbers have to be liveable for the first and hostile to
      the second. -->
 
-**What a caller counts as:** <!-- per address, or per creator_id? They fail
-differently — one script can look like a thousand callers, and one household
-can look like one. -->
+**What a caller counts as:** <!-- per address, or per creator_id? They fail differently — one script can look like a thousand callers, and one household can look like one. -->
+The rate limiter tracks requests per creator_id from the JSON payload (falling back to the remote IP address if creator_id is missing). Tracking per creator_id ensures a script cannot evade limits simply by cycling through rotating proxies or VPN addresses, while allowing multiple writers sharing a home or campus IP to submit independently.
 
 **The run of status codes when I pushed past it:**
 
@@ -281,6 +282,27 @@ can look like one. -->
 
 ```
 
+  [ 1/15] 200
+  [ 2/15] 200
+  [ 3/15] 200
+  [ 4/15] 200
+  [ 5/15] 200
+  [ 6/15] 200
+  [ 7/15] 200
+  [ 8/15] 200
+  [ 9/15] 200
+  [10/15] 200
+  [11/15] 429
+  [12/15] 429
+  [13/15] 429
+  [14/15] 429
+  [15/15] 429
+
+============================================================
+200 200 200 200 200 200 200 200 200 200 429 429 429 429 429
+============================================================
+
+5 of 15 were rate limited.
 ```
 
 ---
