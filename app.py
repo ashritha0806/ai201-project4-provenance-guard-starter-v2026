@@ -164,6 +164,11 @@ def submit():
         return jsonify({"error": "invalid_text", "message": "Text is required and cannot be empty."}), 400
     if not creator_id or not isinstance(creator_id, str) or not creator_id.strip():
         return jsonify({"error": "invalid_creator_id", "message": "creator_id is required and cannot be empty."}), 400
+    # criteria 1
+    if not text.isascii():
+        return jsonify({"error": "invalid_text", "message": "Text must contain only ASCII characters."}), 400
+    if len(text) > 10000:
+        return jsonify({"error": "invalid_text", "message": "Text exceeds maximum size."}), 400
     # Criterion 5 
     words = text.split()
     if len(words) < 20:
