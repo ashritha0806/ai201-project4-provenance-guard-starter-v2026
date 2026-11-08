@@ -139,12 +139,12 @@ What my rule does with it: The two signals disagree (model_score at 0.562 vs sty
 
 | Label                 | Score range | The exact text a reader sees |
 | --------------------- | ----------- | ---------------------------- |
-| high-confidence human |             |                              |
-| unsure                |             |                              |
-| high-confidence AI    |             |                              |
+| high-confidence human |   0.00 – 0.35          |       This text shows natural variations consistent with human writing.                       |
+| unsure                |    0.35 – 0.65         |    The patterns in this text are mixed, we cannot determine with confidence whether it was written by a human or an AI.                          |
+| high-confidence AI    |      0.65 – 1.00       |    This text shows strong patterns characteristic of AI-generated writing.                          |
 
 **Why I worded the "unsure" one this way:**
-
+The "unsure" label admits uncertainty without sounding like an accusation against the writer. Because human writing can be plain, direct, or structured, an ambiguous score should never accuse someone of wrong doing. It should state clearly that the system's patterns were mixed and that no determination can be made.
 <!-- It's the hardest of the three. It has to admit uncertainty without
      sounding like an accusation, because the person reading it may well have
      written every word themselves. -->
@@ -169,6 +169,12 @@ $ curl -X POST http://127.0.0.1:5000/submit \
   -d '{"text": "The implementation of the proposed framework requires careful consideration of several key factors.", "creator_id": "student_1"}'
 ```
 
+```bash
+$ curl -X POST http://127.0.0.1:5000/submit \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Choosing a laptop comes down to your priorities. If you travel often, portability and battery life matter most, while heavy gaming or video editing calls for stronger processing power and a better graphics card.", "creator_id": "student_1"}'
+```
+
 ```json
 {
   "confidence": 0.5563,
@@ -181,16 +187,31 @@ $ curl -X POST http://127.0.0.1:5000/submit \
 
 ```
 
+```json
+{
+  "confidence": 0.471,
+  "content_id": "sub_76effa73",
+  "guess": "unsure",
+  "label": "The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.",
+  "model_score": 0.5804,
+  "style_score": 0.3069
+}
+```
+
 **An appeal**
 
 ```bash
 $ curl -X POST http://127.0.0.1:5000/appeal \
   -H "Content-Type: application/json" \
-  -d '{"content_id": "...", "reasoning": "..."}'
+  -d '{"content_id": "sub_76effa73", "reasoning": "I wrote this advice myself based on my own experience buying laptops."}'
 ```
 
 ```json
-
+{
+  "content_id": "sub_76effa73",
+  "message": "Appeal recorded successfully. Submission is now under review.",
+  "status": "under_review"
+}
 ```
 
 **What the log shows afterwards**
@@ -229,6 +250,46 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 }
 ```
 
+```bash
+$ curl "http://127.0.0.1:5000/log?limit=3"
+```
+```json
+{
+  "count": 3,
+  "entries": [
+    {
+      "combined_score": 0.471,
+      "content_id": "sub_0a31163d",
+      "creator_id": "student_1",
+      "guess": "human",
+      "label": "unsure",
+      "model_score": 0.5804,
+      "status": "decided",
+      "style_score": 0.3069,
+      "timestamp": "2026-11-07T22:10:27+00:00"
+    },
+    {
+      "combined_score": 0.471,
+      "content_id": "sub_76effa73",
+      "creator_id": "student_1",
+      "guess": "unsure",
+      "label": "The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.",
+      "model_score": 0.5804,
+      "status": "decided",
+      "style_score": 0.3069,
+      "timestamp": "2026-11-08T00:18:22+00:00"
+    },
+    {
+      "content_id": "sub_76effa73",
+      "creator_id": "student_1",
+      "event": "appeal",
+      "reasoning": "I wrote this advice myself based on my own experience buying laptops.",
+      "status": "under_review",
+      "timestamp": "2026-11-08T00:20:39+00:00"
+    }
+  ]
+}
+```
 ---
 
 ## How I Used AI
