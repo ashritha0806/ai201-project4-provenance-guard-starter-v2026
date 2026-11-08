@@ -164,9 +164,16 @@ def submit():
         return jsonify({"error": "invalid_text", "message": "Text is required and cannot be empty."}), 400
     if not creator_id or not isinstance(creator_id, str) or not creator_id.strip():
         return jsonify({"error": "invalid_creator_id", "message": "creator_id is required and cannot be empty."}), 400
-    # 1. Unique content_id for tracking and appeals
+    # Criterion 5 
+    words = text.split()
+    if len(words) < 20:
+        return jsonify({
+            "error": "invalid_text",
+            "message": "not enough text to score",
+        }), 400
+    # Unique content_id for tracking and appeals
     content_id = f"sub_{uuid.uuid4().hex[:8]}"
-    # 2. Run signal one (model signal)
+    # Run signal one (model signal)
     try:
         model_score = detector.model_signal(text)
     except ValueError as e:

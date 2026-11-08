@@ -140,7 +140,7 @@ What my rule does with it: The two signals disagree (model_score at 0.562 vs sty
 | Label                 | Score range | The exact text a reader sees |
 | --------------------- | ----------- | ---------------------------- |
 | high-confidence human |   0.00 – 0.35          |       This text shows natural variations consistent with human writing.                       |
-| unsure                |    0.35 – 0.65         |    The patterns in this text are mixed, we cannot determine with confidence whether it was written by a human or an AI.                          |
+| unsure                |    0.35 – 0.65         |    The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.                          |
 | high-confidence AI    |      0.65 – 1.00       |    This text shows strong patterns characteristic of AI-generated writing.                          |
 
 **Why I worded the "unsure" one this way:**
@@ -296,15 +296,17 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 
 **Moment 1**
 
-- _What I asked for:_
-- _What came back:_
-- _What I changed:_
+- _What I asked for: How to implement style_signal(text) to combine sentence length spread, type-token ratio, and punctuation density into a single score.
+
+- _What came back: A suggested combination using 70% sentence spread and 30% type-token ratio, while calculating punctuation density without actually using it in the score.
+
+- _What I changed: I noticed that punctuation density was computed but unused. I adjusted the weighting formula so all three features can contribute while choosing 60% sentence spread, 20% type-token ratio, and 20% punctuation density for a balanced stylometric score.
 
 **Moment 2**
 
-- _What I asked for:_
-- _What came back:_
-- _What I changed:_
+- _What I asked for: Why my API response returned "content_id": "test-001" and "guess": "ai" even though the audit log had a generated UUID and the combined confidence was below 0.50.
+- _What came back: An explanation showing that line 190 in app.py was still returning hardcoded placeholder strings from Milestone 3, and line 177 was checking only model_score >= 0.5 instead of the combined confidence.
+- _What I changed: I replaced the hardcoded return values with the actual variables (content_id, model_score, style_score), connected guess and label to scoring.score_to_label, and verified that the audit log and curl responses matched.
 
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
