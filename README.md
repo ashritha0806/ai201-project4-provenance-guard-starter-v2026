@@ -317,12 +317,109 @@ The rate limiter tracks requests per creator_id from the JSON payload (falling b
 <!-- Choose entries that show the interesting failures, not the ten easiest. -->
 
 ```json
-
+[
+  {
+    "timestamp": "2026-11-10T00:37:46+00:00",
+    "content_id": "sub_b1e5bf52",
+    "creator_id": "attacker_EV01",
+    "guess": "human",
+    "model_score": 0.1635,
+    "style_score": 0.5934,
+    "combined_score": 0.3355,
+    "label": "This text shows natural variations consistent with human writing.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "content_id": "sub_e3fdd0cd",
+    "creator_id": "attacker_EV10",
+    "guess": "ai",
+    "model_score": 0.9792,
+    "style_score": 0.5725,
+    "combined_score": 0.8165,
+    "label": "This text shows strong patterns characteristic of AI-generated writing.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "content_id": "sub_499fd68d",
+    "creator_id": "attacker_FP01",
+    "guess": "unsure",
+    "model_score": 0.6175,
+    "style_score": 0.5012,
+    "combined_score": 0.571,
+    "label": "The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "content_id": "sub_ae2b9070",
+    "creator_id": "attacker_FP03",
+    "guess": "ai",
+    "model_score": 0.8051,
+    "style_score": 0.5928,
+    "combined_score": 0.7202,
+    "label": "This text shows strong patterns characteristic of AI-generated writing.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "content_id": "sub_686bff22",
+    "creator_id": "attacker_FP04",
+    "guess": "ai",
+    "model_score": 0.8329,
+    "style_score": 0.5822,
+    "combined_score": 0.7326,
+    "label": "This text shows strong patterns characteristic of AI-generated writing.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "content_id": "sub_d34467b7",
+    "creator_id": "attacker_PI02",
+    "guess": "human",
+    "model_score": 0.1774,
+    "style_score": 0.4907,
+    "combined_score": 0.3027,
+    "label": "This text shows natural variations consistent with human writing.",
+    "status": "decided"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "creator_id": "attacker_MF01",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "missing_text"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "creator_id": "attacker_MF06",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "non_ascii"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "creator_id": "attacker_MF08",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "oversized_text"
+  },
+  {
+    "timestamp": "2026-11-10T00:37:47+00:00",
+    "creator_id": "attacker_flood",
+    "event": "rejected",
+    "status": "rejected",
+    "reason": "rate_limited",
+    "limit": "10 per 1 minute"
+  }
+]
 ```
 
 **The single worst outcome** — the one I'd least want to explain to a writer
 whose work got caught by it:
 
+Attack FP03 a non-native English speaker writing carefully, scored 0.7202 and was falsely labeled as high-confidence AI. Because the writer relied on standard vocabulary and straight forward sentences, the language model found the text highly predictable (model_score = 0.8051). The writer is accused of using AI simply for writing clearly and cautiously in an acquired language.
 ---
 
 ## Run Log and Verdicts
