@@ -311,6 +311,15 @@ The rate limiter tracks requests per creator_id from the JSON payload (falling b
 
 <!-- Every attack with its outcome and a held-or-broke mark.
      `run_attacks.py --label before` produces the table. -->
+Total Attacks: 56
+Total HELD: 43 (76.8%)
+Total BROKE: 13 (23.2%)
+Breakdown by family:
+evasion (10 total): 5 held, 5 broke
+false_positive (8 total): 2 held, 6 broke
+prompt_injection (6 total): 5 held, 1 broke
+malformed (20 total): 19 held, 1 broke
+flood_same_creator (12 total): 12 held, 0 broke
 
 **Ten audit log entries from the run**
 
@@ -428,17 +437,45 @@ Attack FP03 a non-native English speaker writing carefully, scored 0.7202 and wa
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 | --------- | ------ | ----- | ----- | ----- | ------- |
-| 1.        |        |       |       |       |         |
-| 2.        |        |       |       |       |         |
-| 3.        |        |       |       |       |         |
-| 4.        |        |       |       |       |         |
-| 5.        |        |       |       |       |         |
+| 1. False positives on human writing | ≤ 10% flagged as AI | 0/2  | 0/2  | 0/2 | MET |
+| 2. Score spread (AI vs Human) | Gap ≥ 0.40 | 0.552 | 0.552 | 0.552 | MET |
+| 3. Label coverage | 3 of 3 labels reachable | 3/3 | 3/3 | 3/3 | MET |
+| 4. Appeal path changes status | 100% status: under_review | 1/1  | 1/1  | 1/1  | MET |
+| 5. Bad input (< 20 words) | 100% 400 refused, no crash | 4/4 (100%) | 4/4 (100%) | 4/4 (100%) | MET |
 
 **Real output from one trial**, pasted as text, naming the file and function
 that produced it:
 
 ```json
-
+[
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8067,
+    "model_score": 0.9381,
+    "style_score": 0.6097,
+    "label": "This text shows strong patterns characteristic of AI-generated writing.",
+    "sent": "In today's world, technology plays a crucial role in our daily lives. "
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.2324,
+    "model_score": 0.1932,
+    "style_score": 0.2913,
+    "label": "This text shows natural variations consistent with human writing.",
+    "sent": "Run. We sprinted through the damp, murky labyrinth beneath the city, o"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.4712,
+    "model_score": 0.562,
+    "style_score": 0.3351,
+    "label": "The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.",
+    "sent": "The meeting was adjourned. Although several committee members expresse"
+  }
+]
 ```
 
 **Diagnoses**

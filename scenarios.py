@@ -30,34 +30,42 @@ SCENARIOS = [
         # things you actually wrote. This is the criterion that matters most and
         # it's meaningless with someone else's prose.
         "texts": [
-            "REPLACE ME with a paragraph you wrote yourself.",
-            "REPLACE ME with another one. Ten pieces is the usual number.",
+            "Wait, did you check under the couch cushions? I literally looked everywhere for my keys this morning on the kitchen counter, inside my bag, even in the closet for some reason, and they were just gone!",
+            "Honestly, the best part of the trip was just sitting on the dock early in the morning drinking hot coffee before anyone else woke up. The lake was completely still and looked like a clear glass.",
+        ],
+    },
+    {
+        "name": "score spread",
+        "criterion": 2,
+        "texts": [
+            "In today's world, technology plays a crucial role in our daily lives. It is important to remember that education is the key to success in modern society. Furthermore, regular exercise and a healthy diet are essential for maintaining physical and mental health.",
+            "Breathtaking. Visiting Mount Rainier during peak August wildflower season completely blew us away. Purple lupines and scarlet paintbrush blanketed the subalpine meadows while snow still clung to the massive volcanic peak above our campsite, and honestly, no photograph could ever do that crisp mountain air justice!. And honestly, sitting by Reflection Lake at dawn made every grueling mile of the drive totally worth it.",
         ],
     },
     {
         "name": "label coverage",
-        "criterion": 2,
+        "criterion": 3,
         # Inputs spread across your score range, so you can check all three
         # labels are actually reachable.
         "texts": [
-            "REPLACE ME with something you're confident is AI-generated.",
-            "REPLACE ME with something you're confident is human-written.",
-            "REPLACE ME with something genuinely borderline.",
+            "In today's world, technology plays a crucial role in our daily lives. It is important to remember that education is the key to success in modern society. Furthermore, regular exercise and a healthy diet are essential for maintaining physical and mental health.",
+            "Breathtaking. Visiting Mount Rainier during peak August wildflower season completely blew us away. Purple lupines and scarlet paintbrush blanketed the subalpine meadows while snow still clung to the massive volcanic peak above our campsite, and honestly, no photograph could ever do that crisp mountain air justice!. And honestly, sitting by Reflection Lake at dawn made every grueling mile of the drive totally worth it.",
+            "The meeting was adjourned. Although several committee members expressed strong reservations about the newly proposed timeline and budget allocation, the chairperson decided to proceed anyway.",
         ],
     },
-    # A bad-input criterion looks like this. Uncomment and adjust if that's one
-    # of your five — these are raw request bodies, sent exactly as written.
-    #
-    # {
-    #     "name": "bad input",
-    #     "criterion": 3,
-    #     "bodies": [
-    #         {"text": "", "creator_id": "eval_bad_empty"},
-    #         {"creator_id": "eval_bad_missing"},          # no text field at all
-    #         {"text": "word " * 50000, "creator_id": "eval_bad_huge"},
-    #         {"text": None, "creator_id": "eval_bad_null"},
-    #     ],
-    # },
+    #A bad-input criterion looks like this. Uncomment and adjust if that's one
+    #of your five — these are raw request bodies, sent exactly as written.
+    
+    {
+        "name": "bad input",
+        "criterion": 5,
+        "bodies": [
+            {"text": "This is only five words.", "creator_id": "eval_bad_empty"},
+            {"creator_id": "eval_bad_missing"},          # no text field at all
+            {"text": "word " * 50000, "creator_id": "eval_bad_huge"},
+            {"text": None, "creator_id": "eval_bad_null"},
+        ],
+    },
 
     # TODO: add what your remaining criteria need.
     #
