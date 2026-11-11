@@ -258,6 +258,12 @@ $ curl "http://127.0.0.1:5000/log?limit=3"
 - _What came back: An explanation showing that line 190 in app.py was still returning hardcoded placeholder strings from Milestone 3, and line 177 was checking only model_score >= 0.5 instead of the combined confidence.
 - _What I changed: I replaced the hardcoded return values with the actual variables (content_id, model_score, style_score), connected guess and label to scoring.score_to_label, and verified that the audit log and curl responses matched.
 
+**Moment 3 (Unit 8 Verification and Audit)**
+
+- _What I asked for:_ To audit my test outputs, verify that my trial numbers and denominators matched criteria.md targets, check that each criterion had an explicit decision sentence, ensure all 14 broken attacks had stage and mechanism diagnoses, and verify that no required sentences or checklist items were missing before final submission.
+- _What came back:_ Feedback pointing out that Criterion 1 had accidentally duplicated the label-coverage JSON block, that criteria diagnoses needed to explicitly reference the service's 5 pipeline stages, and that every criterion required a clear sentence explaining the decision.
+- _What I changed:_ I corrected the Criterion 1 pasted JSON with the authentic Trial 1 output from `run_2026-11-10_1243_before.md`, mapped all criteria misses directly to the 5 pipeline stages, added the decision rationales, and verified all checklist items.
+
 <!-- ═══════════════════════ UNIT 8 — THE TEST ═══════════════════════ -->
 
 ---
@@ -446,43 +452,33 @@ Attack FP03 a non-native English speaker writing carefully, scored 0.7202 and wa
 
 ### How Each Verdict Was Decided
 - **Criterion 1 (False positives on human writing) — MISSED:** Decided as MISSED because the evaluation trial only tested 2 human texts instead of the required 30-text sample, and on the broader attack set, formal human writing suffered a 75% false-positive rate (6 of 8 formal human texts flagged as AI).
-- **Criterion 2 (Score spread) — MISSED:** Decided as MISSED because the target required a median score gap ≥ 0.40 across 30 AI and 30 human texts, whereas the trial tested only 1 pair, and on the full attack set the median score gap narrowed to ~0.11.
+- **Criterion 2 (Score spread) — MISSED:** Decided as MISSED because the target required a median score gap ≥ 0.40 across 30 AI and 30 human texts, whereas the trial tested only 1 pair, and on the full attack set the median score gap narrowed to 0.11.
 - **Criterion 3 (Label coverage) — MISSED:** Decided as MISSED because although all 3 labels were produced, they appeared only 1 time each across a 3-text scenario rather than the required ≥ 3 times across a 30-text set.
 - **Criterion 4 (Appeal path changes status) — MISSED:** Decided as MISSED because while 3 of 3 manual curl appeals successfully transitioned to `under_review`, the testing stopped at 3 trials rather than reaching the required 10 of 10 target.
 - **Criterion 5 (Bad input handling) — MET:** Decided as MET because 4 of 4 (100%) malformed and short inputs were cleanly rejected with HTTP 400 and an informative error message across all 3 trials without any server crash.
 
-**Real output from one trial**, pasted as text, naming the file and function
-that produced it: run_eval.py::main, recorded in results/run_2026-11-10_1243_before.md:
+**Real output from one trial**, pasted as text, naming the file and function that produced it: run_eval.py::main, recorded in results/run_2026-11-10_1243_before.md:
 
 Criterion 1 — my own writing (Trial 1):
 ```json
 [
   {
     "status": 200,
-    "guess": "ai",
-    "confidence": 0.8067,
-    "model_score": 0.9381,
-    "style_score": 0.6097,
-    "label": "This text shows strong patterns characteristic of AI-generated writing.",
-    "sent": "In today's world, technology plays a crucial role in our daily lives. "
-  },
-  {
-    "status": 200,
-    "guess": "human",
-    "confidence": 0.2324,
-    "model_score": 0.1932,
-    "style_score": 0.2913,
-    "label": "This text shows natural variations consistent with human writing.",
-    "sent": "Run. We sprinted through the damp, murky labyrinth beneath the city, o"
+    "guess": "unsure",
+    "confidence": 0.4474,
+    "model_score": 0.5598,
+    "style_score": 0.2789,
+    "label": "The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.",
+    "sent": "Wait, did you check under the couch cushions? I literally looked every"
   },
   {
     "status": 200,
     "guess": "unsure",
-    "confidence": 0.4712,
-    "model_score": 0.562,
-    "style_score": 0.3351,
+    "confidence": 0.5487,
+    "model_score": 0.6574,
+    "style_score": 0.3856,
     "label": "The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.",
-    "sent": "The meeting was adjourned. Although several committee members expresse"
+    "sent": "Honestly, the best part of the trip was just sitting on the dock early"
   }
 ]
 ```
@@ -624,12 +620,12 @@ Criterion 5 — bad input (Trial 1):
   - **Mechanism:** In initial criteria, I assumed human and AI scores would cleanly separate by ≥0.40. In practice, formal human writing such as essays and non-native writing relies on standard vocabulary that GPT-2 finds highly predictable (model_score > 0.70). Because the combining rule weights Signal 1 at 0.60, human scores were pulled upward while AI evasion scores were pulled downward, resulting in a narrow score gap (~0.11 on the attack set) and causing 6 of 8 formal human texts to be falsely accused of AI.
 
 - **Criterion 3 Miss (Label Coverage):**
-  - **Stage:** Evaluation sample size.
-  - **Mechanism:** The scenarios in `scenarios.py` tested 3 texts total (1 AI, 1 human, 1 unsure). While all 3 labels were proven reachable, the scenario did not contain the 30-text volume needed to produce each label ≥3 times.
+  - **Stage:** The label mapping (`scoring.py::score_to_label`).
+  - **Mechanism:** The label mapping defines 3 score tiers (`human` < 0.35, `unsure` 0.35–0.65, `ai` > 0.65). While all 3 labels were proven reachable in the mapping, producing each label ≥3 times requires a larger evaluated sample; `scenarios.py` only supplied 3 texts total (1 per band), falling short of the 30-text target.
 
 - **Criterion 4 Miss (Appeal Path):**
-  - **Stage:** Evaluation harness limitation.
-  - **Mechanism:** `run_eval.py` only tests `POST /submit`. The appeal endpoint was verified by hand via `curl` against `POST /appeal` across 3 live trials (all 3 successfully transitioned to `under_review`), but did not reach the target volume of 10.
+  - **Stage:** The route (`app.py::appeal`).
+  - **Mechanism:** The evaluation harness (`run_eval.py`) only tests the `/submit` route and lacks automated dispatch to the `/appeal` route. While manual `curl` calls confirmed the route transitions records to `under_review`, the manual test only covered 3 trials instead of the required 10.
 
 #### 2. Broken Attacks (14 BROKE from Attack Set):
 - **False Positives on Formal & Non-Native Human Writing (FP02–FP07, 6 attacks — BROKE):**
@@ -661,29 +657,50 @@ Criterion 5 — bad input (Trial 1):
 ## The Improvement
 
 **What I changed:**
+Reweighted the two signals in `config.py`: changed `WEIGHT_MODEL_SIGNAL` from 0.6 to 0.4, and `WEIGHT_STYLE_SIGNAL` from 0.4 to 0.6. The threshold bounds remained unchanged at 0.35 and 0.65.
 
 **Which diagnosis pointed at it:**
+Pattern 1 from the Diagnoses section ("The Predictability Trap: Signal 1 + Combining Rule"). The before-run showed that weighting Signal 1 (GPT-2 token perplexity) at 0.60 dominated the overall score, causing formal human writing (FP02–FP07) to be accused of being AI, while allowing prompt injection with unusual system syntax (PI02) to score low and evade as human. Shifting weight toward Signal 2 (stylometry) was chosen to reduce reliance on GPT-2's vocabulary predictability.
 
 ### Attack Run — After
 
-<!-- Same format. `run_attacks.py --label after` -->
+Produced by `run_attacks.py::main` (`results/attack_run_2026-11-10_2309_after.md`):
+
+| Metric | Before (0.6 / 0.4) | After (0.4 / 0.6) | Delta |
+|---|---|---|---|
+| **Total HELD** | 42 | **43** | +1 |
+| **Total BROKE** | 14 | **13** | -1 |
+
+#### By family comparison:
+| Family | Total Attacks | Before HELD | Before BROKE | After HELD | After BROKE | Key Shift |
+|---|---|---|---|---|---|---|
+| `flood_same_creator` | 12 | 12 | 0 | 12 | 0 | Unchanged (rate limiter held) |
+| `malformed` | 20 | 19 | 1 | 19 | 1 | Unchanged (RQ07 still 500) |
+| `prompt_injection` | 6 | 5 | 1 | **6** | **0** | **PI02 flipped from BROKE (0.303, human) to HELD (0.352, unsure)** |
+| `evasion` | 10 | 4 | 6 | 4 | 6 | EV01 shifted from 0.336 (human) to 0.421 (unsure) |
+| `false_positive` | 8 | 2 | 6 | 2 | 6 | Scores lowered ~0.04-0.07, but FP02-FP07 remain > 0.65 |
+
+### Criteria Evaluation — After
+Produced by `run_eval.py::main` (`results/run_2026-11-10_2310_after.md`):
+- **Criterion 1 (Personal writing):** Confidence dropped from 0.4474 & 0.5487 to 0.4209 & 0.4943 (still safely in `unsure`).
+- **Criterion 2 (Score spread):** AI score moved 0.8067 → 0.7411; human score moved 0.2550 → 0.2761. Median spread narrowed from 0.5517 to 0.4650, still exceeding the 0.40 target.
+- **Criterion 3 (Label coverage):** All 3 labels remained reachable (`ai`: 0.7411, `human`: 0.2761, `unsure`: 0.4259).
+- **Criterion 5 (Bad input):** 4 of 4 malformed inputs still returned 400 with zero crashes.
 
 **Did it help, and how do I know:**
-
-<!-- Widening the unsure band usually fixes one problem and creates another.
-     Reporting that trade honestly is worth full credit. -->
+It helped on prompt injection evasion, but failed to fix the false positives. I know this because PI02 moved from 0.303 (classified as human, allowing evasion) to 0.352 (classified as `unsure`), eliminating that failure and bringing total HELD attacks from 42 to 43. However, FP02–FP07 all still broke because their style scores were also moderately high (0.58–0.63); thus, increasing Signal 2's weight could not pull their combined scores below the 0.65 AI threshold (scored 0.659–0.695).
 
 ---
 
 ## What's Still Broken
 
-<!-- For each attack still getting through and each criterion still missed:
-     what you'd do, and why you stopped. -->
+- **FP02–FP07 (Formal human writing false positives):** Still falsely flagged as AI (scores 0.659–0.695). Both GPT-2 perplexity and simple stylometrics mistake formal, structured human English for AI generation. To fix this, I would raise the AI decision threshold from 0.65 to 0.75 or incorporate burstiness (inter-sentence perplexity variance). I stopped because Unit 8 restricts improvements to exactly one intervention.
+- **EV03, EV04, EV06, EV09 (Evasion attacks landing in `unsure`):** AI text modified with quotations, rare vocabulary, or extreme sentence lengths dilutes the style score, pulling confidence down into `unsure` (0.42–0.58) rather than triggering AI. Fixing this would require semantic cohesion analysis and deeper syntactic parsing. I stopped to keep the single measured change focused on weights.
+- **RQ07 (JSON array crash):** An HTTP POST body consisting of a JSON array  causes `payload.get()` in `app.py::submit` to raise an `AttributeError`, resulting in an unhandled 500 error. The fix is a one line type validation (`if not isinstance(payload, dict): return 400`). I stopped because Milestone 5 permits only one change, and signal reweighting addressed detection accuracy directly.
+- **Criteria 1–4 Misses (Target sample sizes and eval harness):** Criteria 1, 2, and 3 were missed because `scenarios.py` only contained 2 to 3 test texts rather than the 30-text corpus specified in `criteria.md`. To fix this, I would populate `scenarios.py` with 30 diverse human essays and 30 AI generations. Criterion 4 was missed because `run_eval.py` does not test `/appeal` automatically. To fix this, I would extend the eval script to post 10 appeals. I stopped because manual curl verified the appeal path works, and the unit guidelines emphasize reporting underpowered trials honestly as MISSED rather than making ad-hoc changes.
 
 **The trade I'd make if this ran for real:**
-
-<!-- Two sentences. Fewer wrong accusations means more AI text getting through.
-     Say which way you'd go and WHO PAYS FOR IT. -->
+In a production deployment, I would raise the AI decision threshold from 0.65 to 0.75, routing borderline texts into the manual review queue so that no student or job applicant is falsely accused of cheating. The institution pays for this trade through increased human auditing labor, but it prevents the severe ethical cost of false accusations against honest human writers.
 
 <!-- ═════════════════════════════════════════════════════════════════════
 
