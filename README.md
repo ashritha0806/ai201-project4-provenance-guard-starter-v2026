@@ -312,10 +312,11 @@ The rate limiter tracks requests per creator_id from the JSON payload (falling b
 <!-- Every attack with its outcome and a held-or-broke mark.
      `run_attacks.py --label before` produces the table. -->
 Total Attacks: 56
-Total HELD: 43 (76.8%)
-Total BROKE: 13 (23.2%)
+Total HELD: 42 (75%)
+Total BROKE: 14 (25%)
+
 Breakdown by family:
-evasion (10 total): 5 held, 5 broke
+evasion (10 total): 4 held, 6 broke
 false_positive (8 total): 2 held, 6 broke
 prompt_injection (6 total): 5 held, 1 broke
 malformed (20 total): 19 held, 1 broke
@@ -437,14 +438,14 @@ Attack FP03 a non-native English speaker writing carefully, scored 0.7202 and wa
 
 | Criterion | Target | Run 1 | Run 2 | Run 3 | Verdict |
 | --------- | ------ | ----- | ----- | ----- | ------- |
-| 1. False positives on human writing | ≤ 10% flagged as AI | 0/2  | 0/2  | 0/2 | MET |
-| 2. Score spread (AI vs Human) | Gap ≥ 0.40 | 0.552 | 0.552 | 0.552 | MET |
-| 3. Label coverage | 3 of 3 labels reachable | 3/3 | 3/3 | 3/3 | MET |
-| 4. Appeal path changes status | 100% status: under_review | 1/1  | 1/1  | 1/1  | MET |
-| 5. Bad input (< 20 words) | 100% 400 refused, no crash | 4/4 (100%) | 4/4 (100%) | 4/4 (100%) | MET |
+| 1. False positives on human writing | ≤ 3 of 30 flagged as AI (≤ 10%) | 0/2  | 0/2  | 0/2  | MISSED |
+| 2. Score spread (AI vs Human) | Median gap ≥ 0.40 across 30 AI & 30 human texts | 0.552 (1 pair) | 0.552 (1 pair) | 0.552 (1 pair) | MISSED |
+| 3. Label coverage | All 3 labels appear ≥ 3 times across 30 texts | 1 of each (3 texts) | 1 of each (3 texts) | 1 of each (3 texts) | MISSED |
+| 4. Appeal path changes status | 10 of 10 appeals change status to under_review | 3/3 (by hand) | 3/3 (by hand) | 3/3 (by hand) | MISSED |
+| 5. Bad input (< 20 words) | 100% 400 refused with message, no crash | 4/4 (100%) | 4/4 (100%) | 4/4 (100%) | MET |
 
 **Real output from one trial**, pasted as text, naming the file and function
-that produced it:
+that produced it: run_eval.py::main, recorded in results/run_2026-11-10_1243_before.md:
 
 ```json
 [
@@ -493,6 +494,35 @@ that produced it:
                         signal at 0.6, so it dragged the whole score down."
 
      Look for a pattern. Five failures on one signal is one problem, not five. -->
+#### 1. Criteria Misses:
+- **Criterion 1 Miss (False Positives) & Criterion 2 Miss (Score Spread):**
+  - **Stage:** Signal 1 (`detector.py::model_signal`) and Combining Rule (`scoring.py::combine_signals`).
+  - **Mechanism:** In initial criteria, I assumed human and AI scores would cleanly separate by ≥0.40. In practice, formal human writing such as essays and non-native writing relies on standard vocabulary that GPT-2 finds highly predictable (model_score > 0.70). Because the combining rule weights Signal 1 at 0.60, human scores were pulled upward while AI evasion scores were pulled downward, resulting in a narrow score gap (~0.11 on the attack set) and causing 6 of 8 formal human texts to be falsely accused of AI.
+
+- **Criterion 3 Miss (Label Coverage):**
+  - **Stage:** Evaluation sample size.
+  - **Mechanism:** The scenarios in `scenarios.py` tested 3 texts total (1 AI, 1 human, 1 unsure). While all 3 labels were proven reachable, the scenario did not contain the 30-text volume needed to produce each label each label ≥3 times.
+
+- **Criterion 4 Miss (Appeal Path):**
+  - **Stage:** Evaluation harness limitation.
+  - **Mechanism:** `run_eval.py` only tests `POST /submit`. The appeal endpoint was verified by hand via `curl` against `POST /appeal` across 3 live trials (all 3 successfully transitioned to `under_review`), but did not reach the target volume of 10.
+
+#### 2. Broken Attacks (14 BROKE from Attack Set):
+- **False Positives on Formal & Non-Native Human Writing (FP02–FP07, 6 attacks — BROKE):**
+  - **Stage:** Signal 1 (`detector.py::model_signal`) and Combining Rule.
+  - **Mechanism:** Text following formal rubrics, academic templates, or non-native writing uses standard, predictable words. Signal 1 produced high AI scores (0.70 – 0.83). Weighted at 0.60, this dragged combined scores past the 0.65 threshold, falsely accusing human writers.
+
+- **Evasion via Lexical and Structural Tampering (EV01, EV03, EV04, EV06, EV09, EV10, 6 attacks — BROKE):**
+  - **Stage:** Signal 2 (`stylometry.py::style_signal`) and Combining Rule.
+  - **Mechanism:** In `EV01`, adding typos artificially inflated the type token ratio, driving the style score to human and pulling the combined score to `0.336` (human). In `EV03`, `EV04`, `EV06`, and `EV09`, inserting quotations, extreme sentence length variation, or rare words disrupted the uniform rhythm that Signal 2 looks for, pushing AI text down into the `unsure` band (0.47 – 0.59) instead of being flagged as AI. In `EV10`, repetitive stanzas scored high on model signal (0.979), but the style signal remained moderate (0.572), preventing a decisive label.
+
+- **Prompt Injection Evasion (PI02, 1 attack — BROKE):**
+  - **Stage:** Signal 1 (`detector.py::model_signal`).
+  - **Mechanism:** `PI02` disguised instructions as system messages using meta language but the system did not execute the instruction, the atypical phrasing was surprising to GPT-2 (high perplexity), yielding a low model score of 0.177 and allowing AI text to evade detection with a combined score of 0.303.
+  
+- **Unhandled JSON Array Request Body (RQ07, 1 attack — BROKE):**
+  - **Stage:** The route (`app.py::submit`).
+  - **Mechanism:** `RQ07` submitted a raw JSON array rather than a dictionary. Calling `payload.get("text")` on a Python list raised an unhandled `AttributeError`, causing an HTTP 500 server crash instead of a clean 400 refusal.
 
 ---
 

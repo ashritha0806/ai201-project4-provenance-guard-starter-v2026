@@ -5,8 +5,8 @@
 - 56 attacks · 2026-11-09 16:37
 - Auto-marked BROKE (5xx, crash, no response): **1**
 - Left for you to judge: **55**
-- Total HELD: **43**
-- Total BROKE: **13**
+- Total HELD: **42**
+- Total BROKE: **14**
 
 The Verdict column is blank where a script can't honestly decide. Whether
 an evasion worked depends on where you put your thresholds — read the
@@ -79,13 +79,14 @@ audit log when you go looking for the ten entries to paste.
 
 ## By family
 
-| Family | Attacks | Auto-BROKE | Left to judge |
+| Family | Attacks | HELD | BROKE |
 |---|---|---|---|
-| `evasion` | 10 | 0 | 10 |
-| `false_positive` | 8 | 0 | 8 |
-| `flood_same_creator` | 12 | 0 | 12 |
-| `malformed` | 20 | 1 | 19 |
-| `prompt_injection` | 6 | 0 | 6 |
+| `evasion` | 10 | 4 | 6 |
+| `false_positive` | 8 | 2 | 6 |
+| `flood_same_creator` | 12 | 12 | 0 |
+| `malformed` | 20 | 19 | 1 |
+| `prompt_injection` | 6 | 5 | 1 |
+| **Total** | **56** | **42** | **14** |
 
 > The **false_positive** family is the one to look at hardest. Those are
 > written to be genuine human writing that reads as machine-like. Every one
