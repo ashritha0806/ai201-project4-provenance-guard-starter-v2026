@@ -442,11 +442,19 @@ Attack FP03 a non-native English speaker writing carefully, scored 0.7202 and wa
 | 2. Score spread (AI vs Human) | Median gap ≥ 0.40 across 30 AI & 30 human texts | 0.552 (1 pair) | 0.552 (1 pair) | 0.552 (1 pair) | MISSED |
 | 3. Label coverage | All 3 labels appear ≥ 3 times across 30 texts | 1 of each (3 texts) | 1 of each (3 texts) | 1 of each (3 texts) | MISSED |
 | 4. Appeal path changes status | 10 of 10 appeals change status to under_review | 3/3 (by hand) | 3/3 (by hand) | 3/3 (by hand) | MISSED |
-| 5. Bad input (< 20 words) | 100% 400 refused with message, no crash | 4/4 (100%) | 4/4 (100%) | 4/4 (100%) | MET |
+| 5. Bad input (< 20 words) | 400 refused with message, no crash | 4/4  | 4/4  | 4/4 | MET |
+
+### How Each Verdict Was Decided
+- **Criterion 1 (False positives on human writing) — MISSED:** Decided as MISSED because the evaluation trial only tested 2 human texts instead of the required 30-text sample, and on the broader attack set, formal human writing suffered a 75% false-positive rate (6 of 8 formal human texts flagged as AI).
+- **Criterion 2 (Score spread) — MISSED:** Decided as MISSED because the target required a median score gap ≥ 0.40 across 30 AI and 30 human texts, whereas the trial tested only 1 pair, and on the full attack set the median score gap narrowed to ~0.11.
+- **Criterion 3 (Label coverage) — MISSED:** Decided as MISSED because although all 3 labels were produced, they appeared only 1 time each across a 3-text scenario rather than the required ≥ 3 times across a 30-text set.
+- **Criterion 4 (Appeal path changes status) — MISSED:** Decided as MISSED because while 3 of 3 manual curl appeals successfully transitioned to `under_review`, the testing stopped at 3 trials rather than reaching the required 10 of 10 target.
+- **Criterion 5 (Bad input handling) — MET:** Decided as MET because 4 of 4 (100%) malformed and short inputs were cleanly rejected with HTTP 400 and an informative error message across all 3 trials without any server crash.
 
 **Real output from one trial**, pasted as text, naming the file and function
 that produced it: run_eval.py::main, recorded in results/run_2026-11-10_1243_before.md:
 
+Criterion 1 — my own writing (Trial 1):
 ```json
 [
   {
@@ -479,6 +487,122 @@ that produced it: run_eval.py::main, recorded in results/run_2026-11-10_1243_bef
 ]
 ```
 
+Criterion 2 — score spread (Trial 1):
+```json
+[
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8067,
+    "model_score": 0.9381,
+    "style_score": 0.6097,
+    "label": "This text shows strong patterns characteristic of AI-generated writing.",
+    "sent": "In today's world, technology plays a crucial role in our daily lives. "
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.255,
+    "model_score": 0.2126,
+    "style_score": 0.3185,
+    "label": "This text shows natural variations consistent with human writing.",
+    "sent": "Breathtaking. Visiting Mount Rainier during peak August wildflower sea"
+  }
+]
+```
+Criterion 3 — label coverage (Trial 1):
+```json
+[
+  {
+    "status": 200,
+    "guess": "ai",
+    "confidence": 0.8067,
+    "model_score": 0.9381,
+    "style_score": 0.6097,
+    "label": "This text shows strong patterns characteristic of AI-generated writing.",
+    "sent": "In today's world, technology plays a crucial role in our daily lives. "
+  },
+  {
+    "status": 200,
+    "guess": "human",
+    "confidence": 0.2324,
+    "model_score": 0.1932,
+    "style_score": 0.2913,
+    "label": "This text shows natural variations consistent with human writing.",
+    "sent": "Run. We sprinted through the damp, murky labyrinth beneath the city, o"
+  },
+  {
+    "status": 200,
+    "guess": "unsure",
+    "confidence": 0.4712,
+    "model_score": 0.562,
+    "style_score": 0.3351,
+    "label": "The patterns in this text are mixed, so we cannot determine with confidence whether it was written by a human or an AI.",
+    "sent": "The meeting was adjourned. Although several committee members expresse"
+  }
+]
+```
+
+Criterion 4 — appeal path (Tested by hand via curl against POST /appeal):
+```json
+{
+  "content_id": "sub_76effa73",
+  "message": "Appeal recorded successfully. Submission is now under review.",
+  "status": "under_review"
+}
+
+{
+  "timestamp": "2026-11-10T20:58:52+00:00",
+  "content_id": "sub_76effa73",
+  "creator_id": "student_1",
+  "event": "appeal",
+  "reasoning": "Trial 1 test appeal",
+  "status": "under_review"
+}
+```
+
+Criterion 5 — bad input (Trial 1):
+```json
+[
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "This is only five words."
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "{\"creator_id\": \"eval_bad_missing\"}"
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "word word word word word word word word word word word word word word "
+  },
+  {
+    "status": 400,
+    "guess": null,
+    "confidence": null,
+    "model_score": null,
+    "style_score": null,
+    "label": null,
+    "sent": "{\"text\": null, \"creator_id\": \"eval_bad_null\"}"
+  }
+]
+```
+
 **Diagnoses**
 
 <!-- For each miss AND each broken attack: the stage and the mechanism.
@@ -501,7 +625,7 @@ that produced it: run_eval.py::main, recorded in results/run_2026-11-10_1243_bef
 
 - **Criterion 3 Miss (Label Coverage):**
   - **Stage:** Evaluation sample size.
-  - **Mechanism:** The scenarios in `scenarios.py` tested 3 texts total (1 AI, 1 human, 1 unsure). While all 3 labels were proven reachable, the scenario did not contain the 30-text volume needed to produce each label each label ≥3 times.
+  - **Mechanism:** The scenarios in `scenarios.py` tested 3 texts total (1 AI, 1 human, 1 unsure). While all 3 labels were proven reachable, the scenario did not contain the 30-text volume needed to produce each label ≥3 times.
 
 - **Criterion 4 Miss (Appeal Path):**
   - **Stage:** Evaluation harness limitation.
@@ -518,11 +642,19 @@ that produced it: run_eval.py::main, recorded in results/run_2026-11-10_1243_bef
 
 - **Prompt Injection Evasion (PI02, 1 attack — BROKE):**
   - **Stage:** Signal 1 (`detector.py::model_signal`).
-  - **Mechanism:** `PI02` disguised instructions as system messages using meta language but the system did not execute the instruction, the atypical phrasing was surprising to GPT-2 (high perplexity), yielding a low model score of 0.177 and allowing AI text to evade detection with a combined score of 0.303.
-  
+  - **Mechanism:** `PI02` disguised instructions as system messages using meta language. While the system did not execute the instruction, the atypical phrasing was surprising to GPT-2 (high perplexity), yielding a low model score of 0.177 and allowing AI text to evade detection with a combined score of 0.303.
+
 - **Unhandled JSON Array Request Body (RQ07, 1 attack — BROKE):**
   - **Stage:** The route (`app.py::submit`).
   - **Mechanism:** `RQ07` submitted a raw JSON array rather than a dictionary. Calling `payload.get("text")` on a Python list raised an unhandled `AttributeError`, causing an HTTP 500 server crash instead of a clean 400 refusal.
+
+#### 3. Cross-Cutting Patterns Across Misses and Broken Attacks:
+- **Pattern 1: The Predictability Trap (Signal 1 + Combining Rule — 7 failures: FP02–FP07, PI02):**
+  Signal 1 equates "predictable next words" directly with "AI-generated". Formal human essays and non-native English writers naturally rely on safe, predictable words, so Signal 1 scores them as AI (>0.70). Because the combining rule assigns 60% of the weight to Signal 1, this single flawed assumption dominates the final verdict and triggers repeated false positives.
+- **Pattern 2: Stylometric Brittleness (Signal 2 — 6 failures: EV01, EV03, EV04, EV06, EV09, EV10):**
+  Signal 2 relies on surface heuristics (Type-Token Ratio and sentence length standard deviation). Attackers easily bypassed or diluted these metrics through trivial perturbations—adding typos (raising TTR), inserting quotations, or interleaving short and long sentences. This dragged AI text out of the AI band into `unsure` or `human`.
+- **Pattern 3: Unchecked Request Deserialization (The Route — 1 failure: RQ07):**
+  The route assumed `request.get_json()` always produces a Python dict, leaving the service vulnerable to a 500 crash whenever a valid JSON non-dict (like an array `[]`) is posted.
 
 ---
 
